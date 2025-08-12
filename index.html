@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>Vikings</title>
+  <style>
+    body,
+    html {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      height: 100%;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: black;
+    }
+
+    #unity-canvas {
+      height: 100%;
+      width: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="unity-canvas" tabindex="-1"></canvas>
+
+  <script>
+    const canvas = document.querySelector("#unity-canvas");
+
+    // Function to resize the canvas
+    function resizeCanvas() {
+      const aspectRatio = 16 / 9; // Aspect ratio of the canvas
+      let windowWidth = window.innerWidth;
+      let windowHeight = window.innerHeight;
+
+      if (windowWidth < windowHeight) {
+        let canvasWidth = windowWidth;
+        let canvasHeight = canvasWidth / aspectRatio;
+
+        if (canvasHeight > windowHeight) {
+          canvasHeight = windowHeight;
+          canvasWidth = canvasHeight * aspectRatio;
+        }
+
+        canvas.style.width = `${canvasWidth}px`;
+        canvas.style.height = `${canvasHeight}px`;
+      } else {
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+      }
+    }
+
+    // Handle window resize
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(resizeCanvas, 50);
+    });
+
+    // IndexedDB functions
+    function openDatabase() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open('UnityWebGLStorage', 1);
+
+        request.onupgradeneeded = function (event) {
+          const db = event.target.result;
+          if (!db.objectStoreNames.contains('Vikings')) {
+            db.createObjectStore('Vikings');
+          }
+        };
+
+        request.onsuccess = function (event) {
+          console.log(`[${new Date().toISOString()}] IndexedDB opened successfully`);
+          resolve(event.target.result);
+        };
+
+        request.onerror = function (event) {
+          console.error(`[${new Date().toISOString()}] Error opening IndexedDB: ${event.target.errorCode}`);
+          reject('Error opening IndexedDB: ' + event.target.errorCode);
+        };
+      });
+    }
+
+    async function storeFileInIndexedDB(db, key, url) {
+      return new Promise((resolve, reject) => {
+        console.log(`[${new Date().toISOString()}] Downloading ${key} from network: ${url}`);
+        fetch(url)
+          .then(response => response.blob())
+          .then(blob => {
+            const transaction = db.transaction('Vikings', 'readwrite');
+            const store = transaction.objectStore('Vikings');
+            const request = store.put(blob, key);
+
+            request.onsuccess = () => {
+              console.log(`[${new Date().toISOString()}] Successfully stored ${key} in IndexedDB`);
+              resolve();
+            };
+            request.onerror = () => {
+              console.error(`[${new Date().toISOString()}] Error storing ${key} in IndexedDB`);
+              reject('Error storing file in IndexedDB');
+            };
+          })
+          .catch(error => {
+            console.error(`[${new Date().toISOString()}] Error downloading ${key}: ${error}`);
+            reject('Error downloading file: ' + error);
+          });
+      });
+    }
+
+    async function getFileFromIndexedDB(db, key) {
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction('Vikings', 'readonly');
+        const store = transaction.objectStore('Vikings');
+        const request = store.get(key);
+
+        request.onsuccess = () => {
+          if (request.result) {
+            console.log(`[${new Date().toISOString()}] Successfully retrieved ${key} from IndexedDB`);
+          } else {
+            console.log(`[${new Date().toISOString()}] ${key} not found in IndexedDB`);
+          }
+          resolve(request.result);
+        };
+        request.onerror = () => {
+          console.error(`[${new Date().toISOString()}] Error retrieving ${key} from IndexedDB`);
+          reject('Error retrieving file from IndexedDB');
+        };
+      });
+    }
+
+    // Load Unity WebGL files
+    async function loadUnityGame() {
+      const db = await openDatabase();
+
+      const buildUrl = "Build";
+      const filesToCache = [
+        { key: 'framework.js', url: buildUrl + "/Build.framework.js.unityweb" },
+        { key: 'data', url: buildUrl + "/Build.data.unityweb" },
+        { key: 'wasm', url: buildUrl + "/Build.wasm.unityweb" }
+      ];
+
+      // Check if files are already cached in IndexedDB
+      for (const file of filesToCache) {
+        const cachedFile = await getFileFromIndexedDB(db, file.key);
+        if (cachedFile) {
+          const objectURL = URL.createObjectURL(cachedFile);
+          console.log(`[${new Date().toISOString()}] Loading ${file.key} from IndexedDB cache`);
+          loadFileIntoUnity(file.key, objectURL);
+        } else {
+          console.log(`[${new Date().toISOString()}] ${file.key} not found in IndexedDB, downloading from network`);
+          await storeFileInIndexedDB(db, file.key, file.url);
+          console.log(`[${new Date().toISOString()}] Loading ${file.key} from network`);
+          loadFileIntoUnity(file.key, file.url);
+        }
+      }
+
+      // Initialize Unity
+      const config = {
+        dataUrl: buildUrl + "/Build.data.unityweb",
+        frameworkUrl: buildUrl + "/Build.framework.js.unityweb",
+        codeUrl: buildUrl + "/Build.wasm.unityweb",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "DefaultCompany",
+        productName: "Vikings",
+        productVersion: "1.0",
+      };
+
+      const script = document.createElement("script");
+      script.src = buildUrl + "/Build.loader.js";
+      script.onload = () => {
+        createUnityInstance(canvas, config, (progress) => {
+        }).then((unityInstance) => {
+          console.log(`[${new Date().toISOString()}] Unity instance created successfully`);
+        }).catch((message) => {
+          console.error(`[${new Date().toISOString()}] Error creating Unity instance: ${message}`);
+          alert(message);
+        });
+      };
+      document.body.appendChild(script);
+    }
+
+    // Function to load files into Unity
+    function loadFileIntoUnity(key, url) {
+      console.log(`[${new Date().toISOString()}] Loading ${key} from ${url}`);
+      if (key === 'framework.js') {
+        const script = document.createElement("script");
+        script.src = url;
+        document.body.appendChild(script);
+      } else if (key === 'data' || key === 'wasm') {
+        // Handle .data and .wasm files (Unity will load them automatically)
+      }
+    }
+
+    // Start loading the game
+    loadUnityGame();
+    window.addEventListener('load', resizeCanvas());
+  </script>
+
+  <script type="text/javascript">
+   console.log = function () { };
+   console.warn = function () { };
+   console.error = function () { };
+  </script>
+  <script>
+    window.focus();
+  </script>
+</body>
+
+</html>
