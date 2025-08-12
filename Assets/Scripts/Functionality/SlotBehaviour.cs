@@ -682,7 +682,7 @@ public class SlotBehaviour : MonoBehaviour
         {
             uiManager.PopulateWin(2, SocketManager.ResultData.payload.winAmount);
         }
-        else if (SocketManager.ResultData.payload.winAmount >= currentTotalBet * 20)
+        else if (SocketManager.ResultData.payload.winAmount >= currentTotalBet * 20 || SocketManager.ResultData.scatter.amount > 0)
         {
             uiManager.PopulateWin(3, SocketManager.ResultData.payload.winAmount);
         }
