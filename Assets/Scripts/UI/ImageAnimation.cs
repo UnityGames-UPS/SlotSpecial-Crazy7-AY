@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using DG.Tweening;
 
 public class ImageAnimation : MonoBehaviour
 {
@@ -35,13 +36,14 @@ public class ImageAnimation : MonoBehaviour
 
 	public float delayBetweenLoop;
 
+	private Dictionary<GameObject, Tween> pulseTweens = new Dictionary<GameObject, Tween>();
 	private void Awake()
 	{
 		if (Instance == null)
 		{
 			Instance = this;
 		}
-		
+
 	}
 
 	private void OnEnable()
@@ -133,4 +135,36 @@ public class ImageAnimation : MonoBehaviour
 			rendererDelegate.sprite = textureArray[indexOfTexture];
 		}
 	}
+	public void StartPulse(GameObject target, float scaleAmount = 1.2f, float duration = 0.5f)
+	{
+		// Kill any existing tween on this object first
+		if (pulseTweens.ContainsKey(target))
+		{
+			pulseTweens[target].Kill();
+			pulseTweens.Remove(target);
+		}
+
+		// Store original scale
+		Vector3 originalScale = target.transform.localScale;
+
+		// Create tween
+		Tween pulseTween = target.transform
+			.DOScale(originalScale * scaleAmount, duration)
+			.SetLoops(-1, LoopType.Yoyo) // infinite up & down
+			.SetEase(Ease.InOutSine);
+
+		// Store the tween so we can stop it later
+		pulseTweens[target] = pulseTween;
+	}
+	public void StopPulse(GameObject target)
+	{
+		if (pulseTweens.ContainsKey(target))
+		{
+			pulseTweens[target].Kill();
+			pulseTweens.Remove(target);
+			// Optionally reset to original scale
+			target.transform.localScale = Vector3.one;
+		}
+	}
+
 }
