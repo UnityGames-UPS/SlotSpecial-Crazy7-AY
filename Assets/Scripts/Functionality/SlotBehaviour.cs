@@ -674,15 +674,15 @@ public class SlotBehaviour : MonoBehaviour
 
     internal void CheckWinPopups()
     {
-        if (SocketManager.ResultData.payload.winAmount >= currentTotalBet * 10 && SocketManager.ResultData.payload.winAmount < currentTotalBet * 15)
+        if (SocketManager.ResultData.payload.winAmount >= currentTotalBet * 5 && SocketManager.ResultData.payload.winAmount < currentTotalBet * 10)
         {
             uiManager.PopulateWin(1, SocketManager.ResultData.payload.winAmount);
         }
-        else if (SocketManager.ResultData.payload.winAmount >= currentTotalBet * 15 && SocketManager.ResultData.payload.winAmount < currentTotalBet * 20)
+        else if (SocketManager.ResultData.payload.winAmount >= currentTotalBet * 10 && SocketManager.ResultData.payload.winAmount < currentTotalBet * 15)
         {
             uiManager.PopulateWin(2, SocketManager.ResultData.payload.winAmount);
         }
-        else if (SocketManager.ResultData.payload.winAmount >= currentTotalBet * 20 || SocketManager.ResultData.scatter.amount > 0)
+        else if (SocketManager.ResultData.payload.winAmount >= currentTotalBet * 15 || SocketManager.ResultData.scatter.amount > 0)
         {
             uiManager.PopulateWin(3, SocketManager.ResultData.payload.winAmount);
         }
@@ -727,7 +727,7 @@ public class SlotBehaviour : MonoBehaviour
 
                 if (int.TryParse(SocketManager.ResultData.matrix[i][j], out int parsedNumber))
                 {
-                    if (scatter && parsedNumber == 12)
+                    if (scatter && parsedNumber == 8)
                     {
                         StartGameAnimation(Tempimages[j].slotImages[i].gameObject);
                     }
