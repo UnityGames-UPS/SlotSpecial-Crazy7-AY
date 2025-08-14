@@ -5,6 +5,7 @@ using DG.Tweening;
 using UnityEngine.UI;
 using TMPro;
 using UnityEngine.Networking;
+using Best.SocketIO;
 
 public class UIManager : MonoBehaviour
 {
@@ -420,6 +421,7 @@ public class UIManager : MonoBehaviour
     }
     private void PopulateSymbolsPayout(Paylines paylines)
     {
+        double multiplyer = socketManager.InitialData.bets[slotManager.BetCounter];
         for (int i = 0; i < SymbolsText.Length; i++)
         {
             if (i < 7)
@@ -427,15 +429,15 @@ public class UIManager : MonoBehaviour
                 string text = null;
                 if (paylines.symbols[i].multiplier[0] != 0)
                 {
-                    text += "5x - " + paylines.symbols[i].multiplier[0] + "x";
+                    text += "5x - " + paylines.symbols[i].multiplier[0] * multiplyer;
                 }
                 if (paylines.symbols[i].multiplier[1] != 0)
                 {
-                    text += "\n4x - " + paylines.symbols[i].multiplier[1] + "x";
+                    text += "\n4x - " + paylines.symbols[i].multiplier[1] * multiplyer;
                 }
                 if (paylines.symbols[i].multiplier[2] != 0)
                 {
-                    text += "\n3x - " + paylines.symbols[i].multiplier[2] + "x";
+                    text += "\n3x - " + paylines.symbols[i].multiplier[2] * multiplyer;
                 }
                 if (SymbolsText[i]) SymbolsText[i].text = text;
 
