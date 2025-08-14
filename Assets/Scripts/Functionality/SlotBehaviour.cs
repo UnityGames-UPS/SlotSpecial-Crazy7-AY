@@ -386,6 +386,7 @@ public class SlotBehaviour : MonoBehaviour
         if (TotalBet_text) TotalBet_text.text = (SocketManager.InitialData.bets[BetCounter] * Lines).ToString();
         currentTotalBet = SocketManager.InitialData.bets[BetCounter] * Lines;
         uiManager.InitialiseUIData(SocketManager.UIData.paylines);
+        _bonusManager.PopulateWheel(SocketManager.BonusData);                //cr7
         // Comparebalance();
     }
 
@@ -713,10 +714,10 @@ public class SlotBehaviour : MonoBehaviour
         {
             playBonus = true;
         }
-        // if (SocketManager.ResultData.freeSpin.isFreeSpin)
-        // {
-        //     playFreespin = true;
-        // }
+        if (SocketManager.ResultData.jackpot.amount > 0)
+        {
+            playFreespin = true;
+        }
         PlayFeatureAnimation(playScatter, playBonus, playFreespin);
     }
     private void PlayFeatureAnimation(bool scatter = false, bool bonus = false, bool freeSpin = false)
@@ -757,8 +758,7 @@ public class SlotBehaviour : MonoBehaviour
 
             for (int i = 0; i < LineId.Count; i++)
             {
-                Debug.Log("xxxxxxxx" + LineId[i]);
-                Debug.Log("InitList: " + string.Join(", ", SocketManager.InitialData.lines[LineId[i]]));
+
                 Debug.Log(y_string[LineId[i]]);
                 y_points = y_string[LineId[i]]?.Split(',')?.Select(Int32.Parse)?.ToList();
                 PayCalculator.GeneratePayoutLinesBackend(y_points, y_points.Count);

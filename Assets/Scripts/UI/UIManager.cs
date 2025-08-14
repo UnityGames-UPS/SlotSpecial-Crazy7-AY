@@ -450,7 +450,7 @@ public class UIManager : MonoBehaviour
 
         for (int i = 0; i < BonusText.Length; i++)
         {
-            BonusText[i].text = socketManager.BonusData[i].ToString();                        //cr7
+            BonusText[i].text = (socketManager.BonusData[i] * multiplyer).ToString();                        //cr7
         }
     }
 
